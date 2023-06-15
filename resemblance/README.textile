@@ -1,0 +1,104 @@
+see "matpalm.com/resemblance":http://matpalm.com/resemblance for a proper walkthrough
+instructions here are more for replicating the results on the above project page
+
+h1. measuring exact resemblance (jaccard coeff against shingles)
+
+h2. ruby
+
+run ruby version and output all with resemblance > 0.5
+<pre>
+> cat test.data | ./ruby/shingle.rb coeff 0.5 > result
+</pre>
+
+h2. cpp
+
+run cpp version outputting resemblances above 0 (ie all of them)
+
+outputs to N files generated from N cores so need to collate
+
+<pre>
+> cat test.data | cpp/bin/Release/resemblance 0
+> cat resemblance.*.out > result
+</pre>
+
+h1. munging 
+
+h2. examine a result file
+
+ie see phrases used for comparison rather than just raw result (eg 1 3 0.88)
+
+<pre>
+> cat test.data | ./examine_result.rb result
+</pre>
+
+h2. generate a histogram of resemblance values
+
+<pre>
+> cat result | ./histo.rb | sort -n > histo.dat
+> ./plot_histo.sh histo.dat histo.100.png
+</pre>
+
+h1. measuring resemblance (distance)
+
+h2. ruby
+
+<pre>
+> cat test.data | ./ruby/shingle.rb distance 0 > distances.original
+</pre>
+
+h2. cpp
+
+change the code, cause i havent yet (ie wip!)
+
+h2. converting from distances to points
+
+project distances into 2 dimensional space
+
+then check mean square error for projected distances versus original distances
+
+(similiarly change 2 to whatever dimensionality)
+
+<pre>
+> cat distances.original | ./fastmap.rb 2 > points.2d
+> cat points.2d | ./convert_points_to_distances.rb > distances.projected.2d
+> ./mean_square_error.rb distances.original distances.projected.2d
+</pre>
+
+plot 2d and 3d data with gnuplot
+
+<pre>
+gnuplot> plot 'points.2d' with dots, 'points.2d' with labels
+gnuplot> splot 'points.3d' with dots, 'points.3d' with labels
+gnuplot> splot 'points.11d' with dots, 'points.11d' with labels # good luck with this one! ;)
+</pre>
+
+h1. simhash heuristic
+
+compare simhash to brute force order n squared compare all (considering only values above resemblance 0.5)
+
+<pre>
+> cat test.data | ./ruby/shingle.rb coeff 0.5 | sort -nr -k3 > shingling.result
+> cat test.data | ./ruby/simhash.rb | sort -nr -k3 > simhash.result
+> ./compare.rb shingling.result simhash.result 0.5
+</pre>
+
+h1. sketching heuristic
+
+compare sketching to brute force order n squared compare all (considering only values above resemblance 0.5)
+use 64bit hash, calculate 10 shingles and cutoff at MAX/2
+
+<pre>
+> cat test.data | ./ruby/shingle.rb coeff 0.5 | sort -nr -k3 > shingling.result
+> cat test.data | ./ruby/sketch.rb 64 10 2 | sort -nr -k3 > sketch.result
+> ./compare.rb shingling.result sketch.result 0.5
+</pre>
+
+h1. sketching in erlang
+
+<pre>
+> cd erl && rake
+> ln -s ../test.data . # todo: make path configurable
+> erl -noshell -pa erl/ebin -s main main > erl.result
+</pre>
+
+

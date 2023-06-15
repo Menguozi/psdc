@@ -1,0 +1,1 @@
+erl -noshell -pa ebin -s file_util cat $* 
